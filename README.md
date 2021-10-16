@@ -1,6 +1,6 @@
-# C SMOL CONF
+# C Smol Conf
 Small header only parser with all functions ready for reading simple data and storing them. <br/>
-No sections whatsoever just a key (alphanumeric characters + _) and value a (any characters returning true with [isprint()](https://en.cppreference.com/w/c/string/byte/isprint)) <br/>
+No sections whatsoever just a key (alphanumeric characters + '_') and value a (any characters returning true with [isprint()](https://en.cppreference.com/w/c/string/byte/isprint)) <br/>
 
 CSmolConf is dual licensed <br/>
 LICENSE A - Apache 2.0 License, see [APACHE.LICENSE.md](/APACHE.LICENSE.md) <br/>
