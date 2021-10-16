@@ -3,7 +3,7 @@ Small header only parser with all functions ready for reading simple data and st
 No sections whatsoever just a key (alphanumeric characters + '_') and value a (any characters returning true with [isprint()](https://en.cppreference.com/w/c/string/byte/isprint)) <br/>
 
 CSmolConf is dual licensed <br/>
-LICENSE A - Apache 2.0 License, see [APACHE.LICENSE.md](/APACHE.LICENSE.md) <br/>
+LICENSE A - Apache 2.0 License, see [LICENSE.md](/LICENSE.md) <br/>
 LICENSE B - Public Domain (Unlicense), see [UNLICENSE.md](/UNLICENSE.md)
 
 ## Info
