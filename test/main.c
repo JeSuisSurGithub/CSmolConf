@@ -3,7 +3,8 @@
 
 int main()
 {
-    csc_config* configuration0 = csc_read_config("test1.cscf");
+    csc_config* configuration0;
+    csc_read_config(&configuration0, "test1.cscf");
     csc_config* configuration1 = csc_init_csc_config(16);
 
     csc_append_kvstr_csc_config(configuration1, "TEST0", "firsttest");

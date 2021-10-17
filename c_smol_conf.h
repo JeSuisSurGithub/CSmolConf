@@ -14,7 +14,7 @@
 #endif
 
 #define C_SMOL_CONF_MAJOR 1
-#define C_SMOL_CONF_MINOR 0
+#define C_SMOL_CONF_MINOR 1
 #define C_SMOL_CONF_PATCH 0
 
 #include <assert.h>
@@ -130,22 +130,23 @@ static csc_config* csc_init_csc_config(size_t len);
  * @brief Read .cscf config file
  * @param _csc_config Initialized configuration
  * @param path Path to config file
- * @return Configuration
+ * @return -1 On error, 0 on success
 */
 static int __csc_read_config(csc_config* _csc_config, const char* path);
 
 /**
  * @brief Read .cscf config file
+ * @param _csc_config Uninitialized configuration
  * @param path Path to config file
- * @return Configuration
+ * @return -1 On error, 0 on success
 */
-static csc_config* csc_read_config(const char* path);
+static int csc_read_config(csc_config** _csc_config, const char* path);
 
 /**
  * @brief Read .cscf config file, alias of __csc_read_config
  * @param _csc_config Initialized configuration
  * @param path Path to config file
- * @return Configuration
+ * @return -1 On error, 0 on success
 */
 static int csc_append_config(csc_config* _csc_config, const char* path);
 
@@ -229,7 +230,7 @@ static int csc_get_float(csc_config* _csc_config, const char* key_name, float* d
  * @param dest Store output do not free
  * @return -1 -> No associated value, -2 Associated value isn't a int, 0 Success
 */
-static int csc_get_path(csc_config* _csc_config, const char* key_name, const char* dest);
+static int csc_get_path(csc_config* _csc_config, const char* key_name, const char** dest);
 
 /**
  * @brief Initialize csc_str
@@ -541,11 +542,10 @@ static int __csc_read_config(csc_config* _csc_config, const char* path)
     return 0;
 }
 
-static csc_config* csc_read_config(const char* path)
+static int csc_read_config(csc_config** _csc_config, const char* path)
 {
-    csc_config* new_csc_config = csc_init_csc_config(16);
-    __csc_read_config(new_csc_config, path);
-    return new_csc_config;
+    (*_csc_config) = csc_init_csc_config(16);
+    return __csc_read_config((*_csc_config), path);
 }
 
 static int csc_append_config(csc_config* _csc_config, const char* path)
@@ -682,17 +682,17 @@ static int csc_get_float(
     if (!__csc_is_float(value))
     {
         CSC_LOG_ERR("Key is not a float (%s)", value)
-        return false;
+        return -2;
     }
     *dest = strtof(value, NULL);
     if (*dest > max)
         *dest = max;
     else if (*dest < min)
         *dest = min;
-    return true;
+    return 0;
 }
 
-static int csc_get_path(csc_config* _csc_config, const char* key_name, const char* dest)
+static int csc_get_path(csc_config* _csc_config, const char* key_name, const char** dest)
 {
     CSC_ASSERT_W_ERR_LOG(_csc_config != NULL, "_csc_config is a null pointer")
     const char* value = csc_find(_csc_config, key_name);
@@ -706,7 +706,7 @@ static int csc_get_path(csc_config* _csc_config, const char* key_name, const cha
         CSC_LOG_ERR("Path could not be accessed (%s)", value)
         return -2;
     }
-    dest = value;
+    *dest = value;
     return 0;
 }
 

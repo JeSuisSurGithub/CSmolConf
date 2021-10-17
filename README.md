@@ -27,7 +27,8 @@ example.c
 
 int main()
 {
-    csc_config* in_config = csc_read_config("example.cscf");
+    csc_config* in_config;
+    csc_read_config(&in_config, "example.cscf");
     printf("%s\n", csc_find(in_config, "example_string_key"));
 
     unsigned int example_uint;
