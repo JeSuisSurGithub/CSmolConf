@@ -5,7 +5,7 @@
  * @file c_smol_conf.h
  * @brief C Small Configuration File Utility @n
  * CSmolConf is dual licensed, choose any of the two following
- * LICENSE A - Apache 2.0 License, see APACHE.LICENSE.md
+ * LICENSE A - Apache 2.0 License, see LICENSE.md
  * LICENSE B - Public Domain (Unlicense), see UNLICENSE.md
 */
 
@@ -341,7 +341,7 @@ static bool csc_append_bool_csc_config(csc_config* _csc_config, const char* key_
 /**
  * @brief Concatenated two configurations
  * @param _csc_config0 Destination
- * @param _csc_config1 Copy
+ * @param _csc_config1 Configuration to copys
 */
 static void csc_concat_csc_configs(csc_config* _csc_config0, csc_config* _csc_config1);
 
