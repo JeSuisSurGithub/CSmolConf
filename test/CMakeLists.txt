@@ -12,4 +12,4 @@ add_executable(csc_test "${CMAKE_CURRENT_LIST_DIR}/main.c")
 target_include_directories(csc_test PUBLIC "${CMAKE_CURRENT_LIST_DIR}" "${CSC_DIR}")
 
 # Flags
-target_compile_options(csc_test PUBLIC "-Wall" "-ggdb")
+target_compile_options(csc_test PUBLIC "-Wall" "-O3")

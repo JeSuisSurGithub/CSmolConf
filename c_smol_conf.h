@@ -61,28 +61,28 @@ typedef struct _csc_config
  * @param str String to check
  * @return True if float
 */
-static bool __csc_is_float(const char* str);
+static bool _csc_is_float(const char* str);
 
 /**
  * @brief Check if given string is a int
  * @param str String to check
  * @return True if int
 */
-static bool __csc_is_int(const char* str);
+static bool _csc_is_int(const char* str);
 
 /**
  * @brief Check if given string is a unsigned int
  * @param str String to check
  * @return True if unsigned int
 */
-static bool __csc_is_uint(const char* str);
+static bool _csc_is_uint(const char* str);
 
 /**
  * @brief Check if given path is a file
  * @param path Path to check
  * @return True if it can be accessed
 */
-static bool __csc_is_file(const char* path);
+static bool _csc_is_file(const char* path);
 
 /**
  * @brief Check if given string is a bool @n
@@ -90,7 +90,7 @@ static bool __csc_is_file(const char* path);
  * @param str String to check
  * @return True if bool
 */
-static bool __csc_is_bool(const char* str);
+static bool _csc_is_bool(const char* str);
 
 /**
  * @brief Initialize csc_str
@@ -132,7 +132,7 @@ static csc_config* csc_init_csc_config(size_t len);
  * @param path Path to config file
  * @return -1 On error, 0 on success
 */
-static int __csc_read_config(csc_config* _csc_config, const char* path);
+static int _csc_read_config(csc_config* _csc_config, const char* path);
 
 /**
  * @brief Read .cscf config file
@@ -143,7 +143,7 @@ static int __csc_read_config(csc_config* _csc_config, const char* path);
 static int csc_read_config(csc_config** _csc_config, const char* path);
 
 /**
- * @brief Read .cscf config file, alias of __csc_read_config
+ * @brief Read .cscf config file, alias of _csc_read_config
  * @param _csc_config Initialized configuration
  * @param path Path to config file
  * @return -1 On error, 0 on success
@@ -162,7 +162,7 @@ static void csc_free_csc_config(csc_config* _csc_config);
  * @param _csc_row Row to add
  * @return True on success
 */
-static bool __csc_append_row_csc_config(csc_config* _csc_config, csc_row _csc_row);
+static bool _csc_append_row_csc_config(csc_config* _csc_config, csc_row _csc_row);
 
 /**
  * @brief Append row to csc_config
@@ -171,7 +171,7 @@ static bool __csc_append_row_csc_config(csc_config* _csc_config, csc_row _csc_ro
  * @param csc_key Value
  * @return True on success
 */
-static bool __csc_append_csc_str_csc_config(csc_config* _csc_config, csc_str* csc_key, csc_str* csc_value);
+static bool _csc_append_csc_str_csc_config(csc_config* _csc_config, csc_str* csc_key, csc_str* csc_value);
 
 /**
  * @brief Append row to csc_config
@@ -351,7 +351,7 @@ static void csc_concat_csc_configs(csc_config* _csc_config0, csc_config* _csc_co
  * @param _csc_config Configuration
  * @param out_file Opened file
 */
-static void __csc_write_config_fp(csc_config* _csc_config, FILE* out_file);
+static void _csc_write_config_fp(csc_config* _csc_config, FILE* out_file);
 
 /**
  * @brief Concatenated two configurations
@@ -383,28 +383,28 @@ static bool csc_write_config(csc_config* _csc_config, const char* path);
 
 /* -------------------- STRING TYPE CHECKING -------------------- */
 
-static bool __csc_is_float(const char* str)
+static bool _csc_is_float(const char* str)
 {
     char* end;
     strtof(str, &end);
     return (*end == 0);
 }
 
-static bool __csc_is_int(const char* str)
+static bool _csc_is_int(const char* str)
 {
     char* end;
     strtol(str, &end, 10);
     return (*end == 0);
 }
 
-static bool __csc_is_uint(const char* str)
+static bool _csc_is_uint(const char* str)
 {
     char* end;
     strtoul(str, &end, 10);
     return (*end == 0);
 }
 
-static bool __csc_is_file(const char* path)
+static bool _csc_is_file(const char* path)
 {
     FILE* in_file = NULL;
     CSC_FOPEN_W_ERR_CHK(in_file, path, "r", , false)
@@ -412,7 +412,7 @@ static bool __csc_is_file(const char* path)
     return true;
 }
 
-static bool __csc_is_bool(const char* str)
+static bool _csc_is_bool(const char* str)
 {
     CSC_ASSERT_W_ERR_LOG(str != NULL, "str is a null pointer")
     if (*str == '1' || *str == '0')
@@ -492,7 +492,7 @@ static csc_config* csc_init_csc_config(size_t len)
     return new_csc_config;
 }
 
-static int __csc_read_config(csc_config* _csc_config, const char* path)
+static int _csc_read_config(csc_config* _csc_config, const char* path)
 {
     CSC_ASSERT_W_ERR_LOG(path != NULL, "path is a null pointer")
 
@@ -531,7 +531,7 @@ static int __csc_read_config(csc_config* _csc_config, const char* path)
                     csc_append_c_csc_str(value, cur_ch);
                 cur_ch = fgetc(in_config);
             }
-            __csc_append_csc_str_csc_config(_csc_config, key, value);
+            _csc_append_csc_str_csc_config(_csc_config, key, value);
             csc_free_csc_str(key);
             csc_free_csc_str(value);
             cur_ch = fgetc(in_config);
@@ -545,12 +545,12 @@ static int __csc_read_config(csc_config* _csc_config, const char* path)
 static int csc_read_config(csc_config** _csc_config, const char* path)
 {
     (*_csc_config) = csc_init_csc_config(16);
-    return __csc_read_config((*_csc_config), path);
+    return _csc_read_config((*_csc_config), path);
 }
 
 static int csc_append_config(csc_config* _csc_config, const char* path)
 {
-    return __csc_read_config(_csc_config, path);
+    return _csc_read_config(_csc_config, path);
 }
 
 static void csc_free_csc_config(csc_config* _csc_config)
@@ -564,7 +564,7 @@ static void csc_free_csc_config(csc_config* _csc_config)
     free(_csc_config);
 }
 
-static bool __csc_append_row_csc_config(csc_config* _csc_config, csc_row _csc_row)
+static bool _csc_append_row_csc_config(csc_config* _csc_config, csc_row _csc_row)
 {
     for (size_t index = 0; index < _csc_config->size; index++)
     {
@@ -588,16 +588,16 @@ static bool __csc_append_row_csc_config(csc_config* _csc_config, csc_row _csc_ro
     return true;
 }
 
-static bool __csc_append_csc_str_csc_config(csc_config* _csc_config, csc_str* csc_key, csc_str* csc_value)
+static bool _csc_append_csc_str_csc_config(csc_config* _csc_config, csc_str* csc_key, csc_str* csc_value)
 {
-    return __csc_append_row_csc_config(_csc_config, (csc_row){csc_key, csc_value});
+    return _csc_append_row_csc_config(_csc_config, (csc_row){csc_key, csc_value});
 }
 
 static bool csc_append_kvstr_csc_config(csc_config* _csc_config, const char* key, const char* value)
 {
     csc_str* new_csc_key = csc_convert_csc_str(key);
     csc_str* new_csc_value = csc_convert_csc_str(value);
-    bool res = __csc_append_row_csc_config(_csc_config, (csc_row){new_csc_key, new_csc_value});
+    bool res = _csc_append_row_csc_config(_csc_config, (csc_row){new_csc_key, new_csc_value});
     free(new_csc_key);
     free(new_csc_value);
     return res;
@@ -625,7 +625,7 @@ static int csc_get_int(csc_config* _csc_config, const char* key_name, int* dest,
         CSC_LOG_ERR("Key not found (%s)", key_name)
         return -1;
     }
-    if (!__csc_is_int(value))
+    if (!_csc_is_int(value))
     {
         CSC_LOG_ERR("Key is not a int (%s)", value)
         return -2;
@@ -652,7 +652,7 @@ static int csc_get_uint(
         CSC_LOG_ERR("Key not found (%s)", key_name)
         return -1;
     }
-    if (!__csc_is_uint(value))
+    if (!_csc_is_uint(value))
     {
         CSC_LOG_ERR("Key is not a unsigned int (%s)", value)
         return -2;
@@ -679,7 +679,7 @@ static int csc_get_float(
         CSC_LOG_ERR("Key not found (%s)", key_name)
         return -1;
     }
-    if (!__csc_is_float(value))
+    if (!_csc_is_float(value))
     {
         CSC_LOG_ERR("Key is not a float (%s)", value)
         return -2;
@@ -701,7 +701,7 @@ static int csc_get_path(csc_config* _csc_config, const char* key_name, const cha
         CSC_LOG_ERR("Key not found (%s)", key_name)
         return -1;
     }
-    if (!__csc_is_file(value))
+    if (!_csc_is_file(value))
     {
         CSC_LOG_ERR("Path could not be accessed (%s)", value)
         return -2;
@@ -719,7 +719,7 @@ static int csc_get_bool(csc_config* _csc_config, const char* key_name, bool* des
         CSC_LOG_ERR("Key not found (%s)", key_name)
         return -1;
     }
-    if (!__csc_is_bool(value))
+    if (!_csc_is_bool(value))
     {
         CSC_LOG_ERR("Value is not a bool (%s)", value)
         return -2;
@@ -840,10 +840,10 @@ static void csc_concat_csc_configs(csc_config* _csc_config0, csc_config* _csc_co
     CSC_ASSERT_W_ERR_LOG(_csc_config1 != NULL, "_csc_config1 is a null pointer")
 
     for (size_t index = 0; index < _csc_config1->size; index++)
-        __csc_append_csc_str_csc_config(_csc_config0, _csc_config1->config[index].key, _csc_config1->config[index].value);
+        _csc_append_csc_str_csc_config(_csc_config0, _csc_config1->config[index].key, _csc_config1->config[index].value);
 }
 
-static void __csc_write_config_fp(csc_config* _csc_config, FILE* out_file)
+static void _csc_write_config_fp(csc_config* _csc_config, FILE* out_file)
 {
     CSC_ASSERT_W_ERR_LOG(_csc_config != NULL, "_csc_config is a null pointer")
     CSC_ASSERT_W_ERR_LOG(out_file != NULL, "out_file is a null pointer")
@@ -857,7 +857,7 @@ static bool csc_write_config(csc_config* _csc_config, const char* path)
 {
     FILE* out_file;
     CSC_FOPEN_W_ERR_CHK(out_file, path, "w+", , false)
-    __csc_write_config_fp(_csc_config, out_file);
+    _csc_write_config_fp(_csc_config, out_file);
     fclose(out_file);
     return true;
 }
