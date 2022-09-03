@@ -1,3 +1,5 @@
 /.vscode/
 /build/
+/csc_test
+/out.scnf
 /wrapper.sh

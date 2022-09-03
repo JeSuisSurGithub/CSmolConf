@@ -1,33 +1,3 @@
-# C Smol Conf
-Small header only parser with all functions ready for reading simple data and storing them. <br/>
-There is not structure just a key (matching with ctype.h isalnum()) and value (matching with ctype.h isprint())<br/>
-
-## Syntax
-Comment ```# COMMENT ```<br/>
-Syntax: ```Key=Value```
-
-## Example
-[in.scnf](/in.scnf)
-```
-is_working=maybe i don't know
-```
-[in2.scnf](/in2.scnf)
-```
-# some comments
-    # some comments
-    bool_true=true
-    bool_false=false
-    bool_on=on
-    bool_off=off
-    bool_1=1
-    bool_0=0
-integer=-25555
-unsigned=4294967295
-float=3.14
-other_config=in.scnf
-```
-[test.c](/test.c)
-```c
 #include "c_smol_conf.h"
 #include <stdio.h>
 
@@ -66,4 +36,3 @@ int main()
     scnf_free_scnf_config(config_in2);
     scnf_free_scnf_config(config_out);
 }
-```

@@ -1,0 +1,12 @@
+# some comments
+    # some comments
+    bool_true=true
+    bool_false=false
+    bool_on=on
+    bool_off=off
+    bool_1=1
+    bool_0=0
+integer=-25555
+unsigned=4294967295
+float=3.14
+other_config=in.scnf

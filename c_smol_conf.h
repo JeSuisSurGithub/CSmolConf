@@ -1,730 +1,322 @@
-#ifndef C_SMOL_CONF_H
-#define C_SMOL_CONF_H
+#ifndef SMOL_CONF_H
+#define SMOL_CONF_H
 
 /**
- * @file c_smol_conf.h
- * @brief C Small Configuration File Utility @n
- * CSmolConf is dual licensed, choose any of the two following
- * LICENSE A - Apache 2.0 License, see LICENSE.md
- * LICENSE B - Public Domain (Unlicense), see UNLICENSE.md
+ * Small Configuration File Utility
+ * LICENSE - Public Domain (Unlicense), see UNLICENSE.md
 */
 
 #ifdef __cplusplus
     extern "C" {
 #endif
 
-#define C_SMOL_CONF_MAJOR 1
-#define C_SMOL_CONF_MINOR 1
-#define C_SMOL_CONF_PATCH 0
+#define SMOL_CONF_MAJOR 2
+#define SMOL_CONF_MINOR 0
+#define SMOL_CONF_PATCH 0
 
-#include <assert.h>
 #include <ctype.h>
+#include <float.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-/* -------------------- STRUCTS -------------------- */
+static const size_t SCNF_CACHE_SIZE = 256;
 
-/**
- * @brief Custom string with allocated length and true length stored
-*/
-typedef struct _csc_str
+#define SCNF_NO_CLAMP_INT_MIN INT32_MIN
+#define SCNF_NO_CLAMP_INT_MAX INT32_MAX
+
+#define SCNF_NO_CLAMP_UINT_MIN 0
+#define SCNF_NO_CLAMP_UINT_MAX UINT32_MAX
+
+#define SCNF_NO_CLAMP_FLT_MIN -FLT_MAX
+#define SCNF_NO_CLAMP_FLT_MAX FLT_MAX
+
+/* -------------------- TYPEDEFS -------------------- */
+
+typedef struct _scnf_kvpair
 {
-    char* str;  //!< String with length of .len
-    size_t capacity; //!< Allocated space
-    size_t size; //!< Position of the null char
-}csc_str;
+    char* key;
+    char* value;
+}scnf_kvpair;
 
-/**
- * @brief Just a struct contains csc_str pointers
-*/
-typedef struct _csc_row
+typedef struct _scnf_index_node
 {
-    csc_str* key;   //!< Pointer to key name
-    csc_str* value; //!< Pointer to value
-}csc_row;
+    size_t index;
+    struct _scnf_index_node* next;
+}scnf_index_node;
 
-/**
- * @brief Config file
-*/
-typedef struct _csc_config
+typedef struct _scnf_config
 {
-    csc_row* config;    //!< Array of csc_rows
-    size_t capacity; // Number of csc_row elements allocated
-    size_t size; // Current number of csc_row element filled
-}csc_config;
+    scnf_kvpair* config;
+    size_t capacity;
+    size_t size;
+    scnf_index_node** hash_to_index;
+}scnf_config;
 
-/**
- * @brief Check if given string is a float
- * @param str String to check
- * @return True if float
-*/
-static bool _csc_is_float(const char* str);
-
-/**
- * @brief Check if given string is a int
- * @param str String to check
- * @return True if int
-*/
-static bool _csc_is_int(const char* str);
-
-/**
- * @brief Check if given string is a unsigned int
- * @param str String to check
- * @return True if unsigned int
-*/
-static bool _csc_is_uint(const char* str);
-
-/**
- * @brief Check if given path is a file
- * @param path Path to check
- * @return True if it can be accessed
-*/
-static bool _csc_is_file(const char* path);
-
-/**
- * @brief Check if given string is a bool @n
- * TRUE, FALSE, ON, OFF, 1 and 0 are counted as valid (case insensitive)
- * @param str String to check
- * @return True if bool
-*/
-static bool _csc_is_bool(const char* str);
-
-/**
- * @brief Initialize csc_str
- * @param len String length
- * @return Initialized csc_str
-*/
-static csc_str* csc_init_csc_str(size_t len);
-
-/**
- * @brief Initialize csc_str
- * @param str Base string, will be copied
- * @return Initialized csc_str
-*/
-static csc_str* csc_convert_csc_str(const char* str);
-
-/**
- * @brief Free csc_str
- * @param _csc_str Pointer to free
-*/
-static void csc_free_csc_str(csc_str* _csc_str);
-
-/**
- * @brief Safe append char to csc_str
- * @param _csc_str String to append to
- * @param c Char to append
-*/
-static void csc_append_c_csc_str(csc_str* _csc_str, char c);
-
-/**
- * @brief Initiliaze csc_config
- * @param len Number of rows allocated
- * @return Initiliazed csc_config
-*/
-static csc_config* csc_init_csc_config(size_t len);
-
-/**
- * @brief Read .cscf config file
- * @param _csc_config Initialized configuration
- * @param path Path to config file
- * @return -1 On error, 0 on success
-*/
-static int _csc_read_config(csc_config* _csc_config, const char* path);
-
-/**
- * @brief Read .cscf config file
- * @param _csc_config Uninitialized configuration
- * @param path Path to config file
- * @return -1 On error, 0 on success
-*/
-static int csc_read_config(csc_config** _csc_config, const char* path);
-
-/**
- * @brief Read .cscf config file, alias of _csc_read_config
- * @param _csc_config Initialized configuration
- * @param path Path to config file
- * @return -1 On error, 0 on success
-*/
-static int csc_append_config(csc_config* _csc_config, const char* path);
-
-/**
- * @brief Free csc_config
- * @param _csc_config csc_config to free
-*/
-static void csc_free_csc_config(csc_config* _csc_config);
-
-/**
- * @brief Append row to csc_config
- * @param _csc_config Destination config
- * @param _csc_row Row to add
- * @return True on success
-*/
-static bool _csc_append_row_csc_config(csc_config* _csc_config, csc_row _csc_row);
-
-/**
- * @brief Append row to csc_config
- * @param _csc_config Destination config
- * @param csc_key Key
- * @param csc_key Value
- * @return True on success
-*/
-static bool _csc_append_csc_str_csc_config(csc_config* _csc_config, csc_str* csc_key, csc_str* csc_value);
-
-/**
- * @brief Append row to csc_config
- * @param _csc_config Destination config
- * @param key Key
- * @param key Value
- * @return True on success
-*/
-static bool csc_append_kvstr_csc_config(csc_config* _csc_config, const char* key, const char* value);
-
-/**
- * @brief Linear search
- * @param _csc_config Configuration
- * @param key_name Key
- * @return Value associated with the key, do not free
-*/
-static const char* csc_find(csc_config* _csc_config, const char* key_name);
-
-/**
- * @brief Initialize csc_str
- * @param _csc_config Configuration
- * @param key_name Key
- * @param dest Store output
- * @param min Minimum accepted value, fallbacks if inferior to this min
- * @param max Maximum accepted value, fallbacks if superior to this max
- * @return -1 -> No associated value, -2 Associated value isn't a int, 0 Success
-*/
-static int csc_get_int(csc_config* _csc_config, const char* key_name, int* dest, int min, int max);
-
-/**
- * @brief Initialize csc_str
- * @param _csc_config Configuration
- * @param key_name Key
- * @param dest Store output
- * @param min Minimum accepted value, fallbacks if inferior to this min
- * @param max Maximum accepted value, fallbacks if superior to this max
- * @return -1 -> No associated value, -2 Associated value isn't a int, 0 Success
-*/
-static int csc_get_uint(csc_config* _csc_config, const char* key_name, unsigned int* dest, unsigned int min, unsigned int max);
-
-/**
- * @brief Initialize csc_str
- * @param _csc_config Configuration
- * @param key_name Key
- * @param dest Store output
- * @param min Minimum accepted value, fallbacks if inferior to this min
- * @param max Maximum accepted value, fallbacks if superior to this max
- * @return -1 -> No associated value, -2 Associated value isn't a int, 0 Success
-*/
-static int csc_get_float(csc_config* _csc_config, const char* key_name, float* dest, float min, float max);
-
-/**
- * @brief Initialize csc_str
- * @param _csc_config Configuration
- * @param key_name Key
- * @param dest Store output do not free
- * @return -1 -> No associated value, -2 Associated value isn't a int, 0 Success
-*/
-static int csc_get_path(csc_config* _csc_config, const char* key_name, const char** dest);
-
-/**
- * @brief Initialize csc_str
- * @param _csc_config Configuration
- * @param key_name Key
- * @param dest Store output
- * @return -1 -> No associated value, -2 Associated value isn't a int, 0 Success
-*/
-static int csc_get_bool(csc_config* _csc_config, const char* key_name, bool* dest);
-
-/**
- * @brief Check if key as an associated value
- * @param _csc_config Configuration
- * @param key_name Key
- * @return True if defined
-*/
-static bool csc_is_def(csc_config* _csc_config, const char* key_name);
-
-/**
- * @brief Adds entry to configuration
- * @param _csc_config Target config
- * @param key_name Key name
- * @param _long Value
- * @return True on success
-*/
-static bool csc_append_long_csc_config(csc_config* _csc_config, const char* key_name, long _long);
-
-/**
- * @brief Adds entry to configuration
- * @param _csc_config Target config
- * @param key_name Key name
- * @param _llong Value
- * @return True on success
-*/
-static bool csc_append_llong_csc_config(csc_config* _csc_config, const char* key_name, long long _llong);
-
-/**
- * @brief Adds entry to configuration
- * @param _csc_config Target config
- * @param key_name Key name
- * @param _int Value
- * @return True on success
-*/
-static bool csc_append_int_csc_config(csc_config* _csc_config, const char* key_name, int _int);
-
-/**
- * @brief Adds entry to configuration
- * @param _csc_config Target config
- * @param key_name Key name
- * @param _ulong Value
- * @return True on success
-*/
-static bool csc_append_ulong_csc_config(csc_config* _csc_config, const char* key_name, unsigned long _ulong);
-
-/**
- * @brief Adds entry to configuration
- * @param _csc_config Target config
- * @param key_name Key name
- * @param _ullong Value
- * @return True on success
-*/
-static bool csc_append_ullong_csc_config(csc_config* _csc_config, const char* key_name, unsigned long long _ullong);
-
-/**
- * @brief Adds entry to configuration
- * @param _csc_config Target config
- * @param key_name Key name
- * @param _uint Value
- * @return True on success
-*/
-static bool csc_append_uint_csc_config(csc_config* _csc_config, const char* key_name, unsigned int _uint);
-
-/**
- * @brief Adds entry to configuration
- * @param _csc_config Target config
- * @param key_name Key name
- * @param _float Value
- * @return True on success
-*/
-static bool csc_append_float_csc_config(csc_config* _csc_config, const char* key_name, float _float);
-
-/**
- * @brief Adds entry to configuration
- * @param _csc_config Target config
- * @param key_name Key name
- * @param _double Value
- * @return True on success
-*/
-static bool csc_append_double_csc_config(csc_config* _csc_config, const char* key_name, double _double);
-
-/**
- * @brief Adds entry to configuration
- * @param _csc_config Target config
- * @param key_name Key name
- * @param _ldouble Value
- * @return True on success
-*/
-static bool csc_append_long_double_csc_config(csc_config* _csc_config, const char* key_name, long double ldouble);
-
-/**
- * @brief Adds entry to configuration
- * @param _csc_config Target config
- * @param key_name Key name
- * @param _bool Value
- * @return True on success
-*/
-static bool csc_append_bool_csc_config(csc_config* _csc_config, const char* key_name, bool _bool);
-
-/**
- * @brief Concatenated two configurations
- * @param _csc_config0 Destination
- * @param _csc_config1 Configuration to copys
-*/
-static void csc_concat_csc_configs(csc_config* _csc_config0, csc_config* _csc_config1);
-
-/**
- * @brief Concatenated two configurations
- * @param _csc_config Configuration
- * @param out_file Opened file
-*/
-static void _csc_write_config_fp(csc_config* _csc_config, FILE* out_file);
-
-/**
- * @brief Concatenated two configurations
- * @param _csc_config Configuration
- * @param path File path
- * @return True on success
-*/
-static bool csc_write_config(csc_config* _csc_config, const char* path);
-
-/* -------------------- MACROS -------------------- */
-
-#define CSC_LOG_ERR(FMT, ...)  \
-    fprintf(stderr, "ERROR: (%s:%i), " FMT "\n", __FILE__, __LINE__, ##__VA_ARGS__);
-
-#define CSC_ASSERT_W_ERR_LOG(ASSERT, FMT, ...) \
-    if(!(ASSERT))   \
-    {   \
-        CSC_LOG_ERR("ASSERTION ERROR: " FMT, ##__VA_ARGS__)    \
-        assert(ASSERT); \
-    }
-
-#define CSC_FOPEN_W_ERR_CHK(FPTR, FN, MODE, CLEANUPS, RETCODE)  \
-    if (!((FPTR) = fopen(FN, MODE))) \
-    {   \
-        CSC_LOG_ERR("fopen(%s, %s) failed", FN, MODE)  \
-        CLEANUPS  \
-        return (RETCODE);   \
-    }
-
-/* -------------------- STRING TYPE CHECKING -------------------- */
-
-static bool _csc_is_float(const char* str)
+typedef enum _SCNF_ERROR
 {
-    char* end;
-    strtof(str, &end);
-    return (*end == 0);
+    SCNF_SUCCESS = 0,
+    SCNF_FAILED_FOPEN = 1,
+    SCNF_FAILED_SYNTAX_ERROR = 2,
+    SCNF_FAILED_NOT_FOUND = 3,
+    SCNF_FAILED_WRONG_TYPE = 4
+}SCNF_ERROR;
+
+/* -------------------- DEFINITIONS -------------------- */
+
+// SCNF Config
+static uint32_t _scnf_hash(const char* str);
+static scnf_config* scnf_init_scnf_config(size_t len);
+static SCNF_ERROR _scnf_read_config(scnf_config* config, const char* path);
+static SCNF_ERROR scnf_read_config(scnf_config** pconfig, const char* path);
+static SCNF_ERROR scnf_append_config(scnf_config* config, const char* path);
+static void scnf_free_scnf_config(scnf_config* config);
+static bool scnf_config_append_kv(scnf_config* config, const char* key, const char* value);
+static const char* scnf_find(scnf_config* config, const char* key);
+
+// Read
+static SCNF_ERROR scnf_get_bool(scnf_config* config, const char* key, bool* dest);
+static SCNF_ERROR scnf_get_int(scnf_config* config, const char* key, int* dest, int min, int max);
+static SCNF_ERROR scnf_get_uint(scnf_config* config, const char* key, unsigned int* dest, unsigned int min, unsigned int max);
+static SCNF_ERROR scnf_get_float(scnf_config* config, const char* key, float* dest, float min, float max);
+static bool _scnf_file_exists(const char* path);
+static SCNF_ERROR scnf_get_path(scnf_config* config, const char* key, const char** dest);
+
+// Write
+static bool scnf_append_bool_scnf_config(scnf_config* config, const char* key, bool value);
+static bool scnf_append_int_scnf_config(scnf_config* config, const char* key, int value);
+static bool scnf_append_uint_scnf_config(scnf_config* config, const char* key, unsigned int value);
+static bool scnf_append_float_scnf_config(scnf_config* config, const char* key, float value);
+
+// OTHER
+static void scnf_concat_scnf_configs(scnf_config* dest_config, scnf_config* src_config);
+static void _scnf_write_config(scnf_config* config, FILE* out_file);
+static bool scnf_write_config(scnf_config* config, const char* path);
+
+/* -------------------- SCNF_CONFIG -------------------- */
+
+static uint32_t _scnf_hash(const char* str)
+{
+    // DJB2 Hash
+    uint32_t hash = 5381;
+    int c;
+    while ((c = *str++) != '\0')
+        hash = ((hash << 5) + hash) + c;
+    return hash;
 }
 
-static bool _csc_is_int(const char* str)
+static scnf_config* scnf_init_scnf_config(size_t len)
 {
-    char* end;
-    strtol(str, &end, 10);
-    return (*end == 0);
+    scnf_config* config = (scnf_config*)malloc(sizeof(scnf_config));
+    config->config = (scnf_kvpair*)malloc(sizeof(scnf_kvpair) * len);
+    config->capacity = len;
+    config->size = 0;
+    config->hash_to_index = (scnf_index_node**)calloc(SCNF_CACHE_SIZE, sizeof(scnf_index_node*));
+    return config;
 }
 
-static bool _csc_is_uint(const char* str)
+static SCNF_ERROR _scnf_read_config(scnf_config* config, const char* path)
 {
-    char* end;
-    strtoul(str, &end, 10);
-    return (*end == 0);
-}
-
-static bool _csc_is_file(const char* path)
-{
-    FILE* in_file = NULL;
-    CSC_FOPEN_W_ERR_CHK(in_file, path, "r", , false)
-    fclose(in_file);
-    return true;
-}
-
-static bool _csc_is_bool(const char* str)
-{
-    CSC_ASSERT_W_ERR_LOG(str != NULL, "str is a null pointer")
-    if (*str == '1' || *str == '0')
-        return true;
-
-    char* upper_str = (char*)malloc(sizeof(char) * strlen(str) + 1);
-    const char* pstr = str;
-    while (*pstr != 0)
-    {
-        upper_str[pstr - str] = toupper(*pstr);
-        pstr++;
-    }
-    upper_str[pstr - str] = 0;
-
-    if ((strcmp(upper_str, "TRUE") == 0) ||
-        (strcmp(upper_str, "FALSE") == 0) ||
-        (strcmp(upper_str, "ON") == 0) ||
-        (strcmp(upper_str, "OFF") == 0))
-    {
-        free(upper_str);
-        return true;
-    }
-    free(upper_str);
-    return false;
-}
-
-/* -------------------- CSC_STR -------------------- */
-
-static csc_str* csc_init_csc_str(size_t len)
-{
-    CSC_ASSERT_W_ERR_LOG(len != 0, "len is null")
-    csc_str* new_csc_str = (csc_str*)malloc(sizeof(csc_str));
-    new_csc_str->str = (char*)malloc(sizeof(char) * len);
-    new_csc_str->capacity = len;
-    new_csc_str->size = 0;
-    return new_csc_str;
-}
-
-static csc_str* csc_convert_csc_str(const char* str)
-{
-    CSC_ASSERT_W_ERR_LOG(str != 0, "str is a null pointer")
-    size_t str_len = strlen(str);
-    csc_str* new_csc_str = (csc_str*)malloc(sizeof(csc_str));
-    new_csc_str->str = (char*)malloc(sizeof(char) * str_len + 1);
-    strcpy(new_csc_str->str, str);
-    new_csc_str->capacity = str_len + 1;
-    new_csc_str->size = str_len + 1;
-    return new_csc_str;
-}
-
-static void csc_free_csc_str(csc_str* _csc_str)
-{
-    free(_csc_str->str);
-    free(_csc_str);
-}
-
-static void csc_append_c_csc_str(csc_str* _csc_str, char c)
-{
-    CSC_ASSERT_W_ERR_LOG(_csc_str != NULL, "_csc_str is a null pointer")
-    if ((_csc_str->size + 1) >= _csc_str->capacity)
-    {
-        _csc_str->str = (char*)realloc(_csc_str->str, sizeof(char) * _csc_str->capacity * 1.5F);
-        _csc_str->capacity *= 1.5F;
-    }
-    _csc_str->str[_csc_str->size++] = c;
-    _csc_str->str[_csc_str->size] = 0;
-}
-
-/* -------------------- CSC_CONFIG -------------------- */
-
-static csc_config* csc_init_csc_config(size_t len)
-{
-    csc_config* new_csc_config = (csc_config*)malloc(sizeof(csc_config));
-    new_csc_config->config = (csc_row*)malloc(sizeof(csc_row) * len);
-    new_csc_config->capacity = len;
-    new_csc_config->size = 0;
-    return new_csc_config;
-}
-
-static int _csc_read_config(csc_config* _csc_config, const char* path)
-{
-    CSC_ASSERT_W_ERR_LOG(path != NULL, "path is a null pointer")
-
     FILE* in_config = NULL;
-    CSC_FOPEN_W_ERR_CHK(in_config, path, "r", , -1)
+    if ((in_config = fopen(path, "r")) == NULL)
+        return SCNF_FAILED_FOPEN;
 
-    int cur_ch;
-    while (!feof(in_config))
+    char* cur_line = NULL;
+    size_t cur_line_len = 0;
+    size_t line_count = 0;
+    while(!feof(in_config))
     {
-        cur_ch = fgetc(in_config);
-        while (!feof(in_config) && isspace(cur_ch))
-            cur_ch = fgetc(in_config);
-        if (cur_ch == '#')
+        getline(&cur_line, &cur_line_len, in_config);
+        ++line_count;
+
+        // Skip leading spaces
+        char* cur_line_start = cur_line;
+        while(*cur_line_start == ' ') cur_line_start++;
+
+        // Check for comment
+        char* cur_line_end = strchr(cur_line_start, '#');
+
+        if (cur_line_end != NULL) *cur_line_end = '\0';
+        else cur_line_end = cur_line_start + strlen(cur_line_start);
+        if (cur_line_end[-1] == '\n') cur_line_end[-1] = '\0';
+
+        if ((cur_line_end - cur_line_start) == 0) continue;
+
+        char* equal_ptr = strchr(cur_line_start, '=');
+        if (equal_ptr == NULL)
         {
-            cur_ch = fgetc(in_config);
-            while (!feof(in_config) && (cur_ch != '\n' && cur_ch != '\r'))
-                cur_ch = fgetc(in_config);
-            continue;
+            printf("Error at line %zu, missing '=' sign\n", line_count);
+            free(cur_line);
+            fclose(in_config);
+            return SCNF_FAILED_SYNTAX_ERROR;
         }
-        if (isalnum(cur_ch) || cur_ch == '_')
+
+        // Get key and value
+        size_t key_len = equal_ptr - cur_line_start;
+        size_t value_len = (cur_line_end) - (equal_ptr + 1);
+
+        if (key_len == 0 || value_len == 0)
         {
-            csc_str* key = csc_init_csc_str(16);
-            csc_append_c_csc_str(key, cur_ch);
-            cur_ch = fgetc(in_config);
-            while (!feof(in_config) && cur_ch != '=')
-            {
-                if (isalnum(cur_ch) || cur_ch == '_')
-                    csc_append_c_csc_str(key, cur_ch);
-                cur_ch = fgetc(in_config);
-            }
-            csc_str* value = csc_init_csc_str(16);
-            cur_ch = fgetc(in_config);
-            while (!feof(in_config) && cur_ch != ';')
-            {
-                if (isprint(cur_ch))
-                    csc_append_c_csc_str(value, cur_ch);
-                cur_ch = fgetc(in_config);
-            }
-            _csc_append_csc_str_csc_config(_csc_config, key, value);
-            csc_free_csc_str(key);
-            csc_free_csc_str(value);
-            cur_ch = fgetc(in_config);
+            printf("Error at line %zu, key/value pair malformed\n", line_count);
+            free(cur_line);
+            fclose(in_config);
+            return SCNF_FAILED_SYNTAX_ERROR;
         }
-        else cur_ch = fgetc(in_config);
+
+        char* key = (char*)malloc(key_len + 1);
+        char* value = (char*)malloc(value_len + 1);
+        strncpy(key, cur_line_start, key_len);
+        key[key_len] = '\0';
+        strncpy(value, (equal_ptr + 1), value_len);
+        value[value_len] = '\0';
+
+        // Check key validity
+        char* key_it = key;
+        while (*key_it != '\0')
+        {
+            if(!isalnum(*key_it) && (*key_it) != '_')
+            {
+                printf("Error at line %zu, key is non-alphanumeric\n", line_count);
+                free(cur_line);
+                fclose(in_config);
+                free(key);
+                free(value);
+                return SCNF_FAILED_SYNTAX_ERROR;
+            }
+            key_it++;
+        }
+        char* value_it = value;
+        while (*value_it != '\0')
+        {
+            if(!isprint(*value_it))
+            {
+                printf("Error at line %zu, value is not a printable character\n", line_count);
+                free(cur_line);
+                fclose(in_config);
+                free(key);
+                free(value);
+                return SCNF_FAILED_SYNTAX_ERROR;
+            }
+            value_it++;
+        }
+
+        scnf_config_append_kv(config, key, value);
+        free(key);
+        free(value);
     }
+    if (cur_line) { free(cur_line); }
     fclose(in_config);
-    return 0;
+    return SCNF_SUCCESS;
 }
 
-static int csc_read_config(csc_config** _csc_config, const char* path)
+static SCNF_ERROR scnf_read_config(scnf_config** pconfig, const char* path)
 {
-    (*_csc_config) = csc_init_csc_config(16);
-    return _csc_read_config((*_csc_config), path);
+    (*pconfig) = scnf_init_scnf_config(16);
+    return _scnf_read_config((*pconfig), path);
 }
 
-static int csc_append_config(csc_config* _csc_config, const char* path)
+static SCNF_ERROR scnf_append_config(scnf_config* config, const char* path)
 {
-    return _csc_read_config(_csc_config, path);
+    return _scnf_read_config(config, path);
 }
 
-static void csc_free_csc_config(csc_config* _csc_config)
+static void scnf_free_scnf_config(scnf_config* config)
 {
-    CSC_ASSERT_W_ERR_LOG(_csc_config != NULL, "_csc_config is a null pointer")
-    for (size_t index = 0; index < _csc_config->size; index++)
+    for (size_t index = 0; index < SCNF_CACHE_SIZE; index++)
     {
-        csc_free_csc_str(_csc_config->config[index].key);
-        csc_free_csc_str(_csc_config->config[index].value);
-    }
-    free(_csc_config);
-}
-
-static bool _csc_append_row_csc_config(csc_config* _csc_config, csc_row _csc_row)
-{
-    for (size_t index = 0; index < _csc_config->size; index++)
-    {
-        if (strcmp(_csc_config->config[index].key->str, _csc_row.key->str) == 0)
+        scnf_index_node* index_node;
+        while (config->hash_to_index[index] != NULL)
         {
-            CSC_LOG_ERR("Conflicting key : \"%s\" with respective values %s and %s, second key/value pair will be discarded",
-                _csc_config->config[index].key->str,
-                _csc_config->config[index].value->str,
-                _csc_row.value->str)
-            return false;
+            index_node = config->hash_to_index[index];
+            config->hash_to_index[index] = config->hash_to_index[index]->next;
+            free(index_node);
         }
     }
-    if (_csc_config->size >= _csc_config->capacity)
+    free(config->hash_to_index);
+    for (size_t index = 0; index < config->size; index++)
     {
-        _csc_config->config = (csc_row*)realloc(_csc_config->config, sizeof(csc_row) * _csc_config->capacity * 1.5F);
-        _csc_config->capacity *= 1.5F;
+        free(config->config[index].key);
+        free(config->config[index].value);
     }
-    csc_str* new_csc_key = csc_convert_csc_str(_csc_row.key->str);
-    csc_str* new_csc_value = csc_convert_csc_str(_csc_row.value->str);
-    _csc_config->config[_csc_config->size++] = (csc_row){new_csc_key, new_csc_value};
+    free(config->config);
+    free(config);
+}
+
+static bool scnf_config_append_kv(scnf_config* config, const char* key, const char* value)
+{
+    if (scnf_find(config, key) != NULL)
+        return false;
+    if (config->size >= config->capacity)
+    {
+        config->config = (scnf_kvpair*)realloc(config->config, sizeof(scnf_kvpair) * config->capacity * 1.5F);
+        config->capacity *= 1.5F;
+    }
+    config->config[config->size] = (scnf_kvpair){strdup(key), strdup(value)};
+
+    uint32_t hash = _scnf_hash(config->config[config->size].key);
+
+    scnf_index_node** target_nodep = &config->hash_to_index[hash % SCNF_CACHE_SIZE];
+    if ((*target_nodep) == NULL)
+    {
+        (*target_nodep) = (scnf_index_node*)malloc(sizeof(scnf_index_node));
+        (*target_nodep)->index = config->size;
+        (*target_nodep)->next = NULL;
+    }
+    else
+    {
+        target_nodep = &(*target_nodep)->next;
+        while (*target_nodep != NULL)
+            (*target_nodep) = (*target_nodep)->next;
+        (*target_nodep) = (scnf_index_node*)malloc(sizeof(scnf_index_node));
+        (*target_nodep)->index = config->size;
+        (*target_nodep)->next = NULL;
+    }
+    config->size++;
     return true;
 }
 
-static bool _csc_append_csc_str_csc_config(csc_config* _csc_config, csc_str* csc_key, csc_str* csc_value)
+static const char* scnf_find(scnf_config* config, const char* key)
 {
-    return _csc_append_row_csc_config(_csc_config, (csc_row){csc_key, csc_value});
-}
-
-static bool csc_append_kvstr_csc_config(csc_config* _csc_config, const char* key, const char* value)
-{
-    csc_str* new_csc_key = csc_convert_csc_str(key);
-    csc_str* new_csc_value = csc_convert_csc_str(value);
-    bool res = _csc_append_row_csc_config(_csc_config, (csc_row){new_csc_key, new_csc_value});
-    free(new_csc_key);
-    free(new_csc_value);
-    return res;
-}
-
-static const char* csc_find(csc_config* _csc_config, const char* key_name)
-{
-    CSC_ASSERT_W_ERR_LOG(_csc_config != NULL, "_csc_config is a null pointer")
-    for (size_t index = 0; index < _csc_config->size; index++)
+    uint32_t hash = _scnf_hash(key);
+    scnf_index_node* target_node = config->hash_to_index[hash % SCNF_CACHE_SIZE];
+    if (target_node == NULL)
     {
-        if (strcmp(_csc_config->config[index].key->str, key_name) == 0)
-            return _csc_config->config[index].value->str;
+        return NULL;
+    }
+    if (target_node->next == NULL)
+    {
+        return config->config[target_node->index].value;
+    }
+    else
+    {
+        target_node = target_node->next;
+        while (strcmp(config->config[target_node->index].key, key) != 0)
+        {
+            if (target_node == NULL)
+            {
+                return NULL;
+            }
+            if (target_node->next == NULL)
+            {
+                return config->config[target_node->index].value;
+            }
+            target_node = target_node->next;
+        }
     }
     return NULL;
 }
 
-/* -------------------- GET VALUE FROM CONFIG -------------------- */
+/* -------------------- READ -------------------- */
 
-static int csc_get_int(csc_config* _csc_config, const char* key_name, int* dest, int min, int max)
+static SCNF_ERROR scnf_get_bool(scnf_config* config, const char* key, bool* dest)
 {
-    CSC_ASSERT_W_ERR_LOG(_csc_config != NULL, "_csc_config is a null pointer")
-    const char* value = csc_find(_csc_config, key_name);
+    const char* value = scnf_find(config, key);
     if (value == NULL)
-    {
-        CSC_LOG_ERR("Key not found (%s)", key_name)
-        return -1;
-    }
-    if (!_csc_is_int(value))
-    {
-        CSC_LOG_ERR("Key is not a int (%s)", value)
-        return -2;
-    }
-    *dest = atoi(value);
-    if (*dest > max)
-        *dest = max;
-    else if (*dest < min)
-        *dest = min;
-    return 0;
-}
+        return SCNF_FAILED_NOT_FOUND;
 
-static int csc_get_uint(
-    csc_config* _csc_config,
-    const char* key_name,
-    unsigned int* dest,
-    unsigned int min,
-    unsigned int max)
-{
-    CSC_ASSERT_W_ERR_LOG(_csc_config != NULL, "_csc_config is a null pointer")
-    const char* value = csc_find(_csc_config, key_name);
-    if (value == NULL)
-    {
-        CSC_LOG_ERR("Key not found (%s)", key_name)
-        return -1;
-    }
-    if (!_csc_is_uint(value))
-    {
-        CSC_LOG_ERR("Key is not a unsigned int (%s)", value)
-        return -2;
-    }
-    *dest = strtoul(value, NULL, 10);
-    if (*dest > max)
-        *dest = max;
-    else if (*dest < min)
-        *dest = min;
-    return 0;
-}
-
-static int csc_get_float(
-    csc_config* _csc_config,
-    const char* key_name,
-    float* dest,
-    float min,
-    float max)
-{
-    CSC_ASSERT_W_ERR_LOG(_csc_config != NULL, "_csc_config is a null pointer")
-    const char* value = csc_find(_csc_config, key_name);
-    if (value == NULL)
-    {
-        CSC_LOG_ERR("Key not found (%s)", key_name)
-        return -1;
-    }
-    if (!_csc_is_float(value))
-    {
-        CSC_LOG_ERR("Key is not a float (%s)", value)
-        return -2;
-    }
-    *dest = strtof(value, NULL);
-    if (*dest > max)
-        *dest = max;
-    else if (*dest < min)
-        *dest = min;
-    return 0;
-}
-
-static int csc_get_path(csc_config* _csc_config, const char* key_name, const char** dest)
-{
-    CSC_ASSERT_W_ERR_LOG(_csc_config != NULL, "_csc_config is a null pointer")
-    const char* value = csc_find(_csc_config, key_name);
-    if (value == NULL)
-    {
-        CSC_LOG_ERR("Key not found (%s)", key_name)
-        return -1;
-    }
-    if (!_csc_is_file(value))
-    {
-        CSC_LOG_ERR("Path could not be accessed (%s)", value)
-        return -2;
-    }
-    *dest = value;
-    return 0;
-}
-
-static int csc_get_bool(csc_config* _csc_config, const char* key_name, bool* dest)
-{
-    CSC_ASSERT_W_ERR_LOG(_csc_config != NULL, "_csc_config is a null pointer")
-    const char* value = csc_find(_csc_config, key_name);
-    if (value == NULL)
-    {
-        CSC_LOG_ERR("Key not found (%s)", key_name)
-        return -1;
-    }
-    if (!_csc_is_bool(value))
-    {
-        CSC_LOG_ERR("Value is not a bool (%s)", value)
-        return -2;
-    }
-    char* upper_str = (char*)malloc(sizeof(char) * strlen(value) + 1);
+    char* upper_str = (char*)malloc(strlen(value) + 1);
     const char* pstr = value;
     while (*pstr != 0)
     {
@@ -732,142 +324,162 @@ static int csc_get_bool(csc_config* _csc_config, const char* key_name, bool* des
         pstr++;
     }
     upper_str[pstr - value] = 0;
+
     if (*value == '1' ||
         (strcmp(value, "ON") == 0) ||
         (strcmp(value, "TRUE") == 0))
     {
         *dest = true;
+        free(upper_str);
+        return SCNF_SUCCESS;
     }
-    else *dest = false;
-    return 0;
-}
-
-static bool csc_is_def(csc_config* _csc_config, const char* key_name)
-{
-    CSC_ASSERT_W_ERR_LOG(_csc_config != NULL, "_csc_config is a null pointer")
-    for (size_t index = 0; index < _csc_config->size; index++)
+    else if (*value == '0' ||
+        (strcmp(value, "OFF") == 0) ||
+        (strcmp(value, "FALSE") == 0))
     {
-        if (strcmp(_csc_config->config[index].key->str, key_name) == 0)
-            return true;
+        *dest = false;
+        free(upper_str);
+        return SCNF_SUCCESS;
     }
-    return false;
+    return SCNF_FAILED_WRONG_TYPE;
 }
 
-/* -------------------- WRITE VALUE TO CONFIG -------------------- */
-
-static bool csc_append_long_csc_config(csc_config* _csc_config, const char* key_name, long _long)
+static SCNF_ERROR scnf_get_int(scnf_config* config, const char* key, int* dest, int min, int max)
 {
-    int len = snprintf(NULL, 0, "%li", _long);
-    char* str = (char*)malloc(len + 1);
-    snprintf(str, len + 1, "%li", _long);
-    return csc_append_kvstr_csc_config(_csc_config, key_name, str);
+    const char* value = scnf_find(config, key);
+    if (value == NULL)
+        return SCNF_FAILED_NOT_FOUND;
+    char* end;
+    *dest = strtol(value, &end, 10);
+    if (*end != 0)
+        return SCNF_FAILED_WRONG_TYPE;
+    if (*dest > max)
+        *dest = max;
+    else if (*dest < min)
+        *dest = min;
+    return SCNF_SUCCESS;
 }
 
-static bool csc_append_llong_csc_config(csc_config* _csc_config, const char* key_name, long long _llong)
+static SCNF_ERROR scnf_get_uint(
+    scnf_config* config,
+    const char* key,
+    unsigned int* dest,
+    unsigned int min,
+    unsigned int max)
 {
-    int len = snprintf(NULL, 0, "%lli", _llong);
-    char* str = (char*)malloc(len + 1);
-    snprintf(str, len + 1, "%lli", _llong);
-    return csc_append_kvstr_csc_config(_csc_config, key_name, str);
+    const char* value = scnf_find(config, key);
+    if (value == NULL)
+        return SCNF_FAILED_NOT_FOUND;
+    char* end;
+    *dest = strtoul(value, &end, 10);
+    if (*end != 0)
+        return SCNF_FAILED_WRONG_TYPE;
+    if (*dest > max)
+        *dest = max;
+    else if (*dest < min)
+        *dest = min;
+    return SCNF_SUCCESS;
 }
 
-static bool csc_append_int_csc_config(csc_config* _csc_config, const char* key_name, int _int)
+static SCNF_ERROR scnf_get_float(
+    scnf_config* config,
+    const char* key,
+    float* dest,
+    float min,
+    float max)
 {
-    int len = snprintf(NULL, 0, "%i", _int);
-    char* str = (char*)malloc(len + 1);
-    snprintf(str, len + 1, "%i", _int);
-    return csc_append_kvstr_csc_config(_csc_config, key_name, str);
+    const char* value = scnf_find(config, key);
+    if (value == NULL)
+        return SCNF_FAILED_NOT_FOUND;
+    char* end;
+    *dest = strtof(value, &end);
+    if (*end != 0)
+        return SCNF_FAILED_WRONG_TYPE;
+    if (*dest > max)
+        *dest = max;
+    else if (*dest < min)
+        *dest = min;
+    return SCNF_SUCCESS;
 }
 
-static bool csc_append_ulong_csc_config(csc_config* _csc_config, const char* key_name, unsigned long _ulong)
+static bool _scnf_file_exists(const char* path)
 {
-    int len = snprintf(NULL, 0, "%lu", _ulong);
-    char* str = (char*)malloc(len + 1);
-    snprintf(str, len + 1, "%lu", _ulong);
-    return csc_append_kvstr_csc_config(_csc_config, key_name, str);
-}
-
-static bool csc_append_ullong_csc_config(csc_config* _csc_config, const char* key_name, unsigned long long _ullong)
-{
-    int len = snprintf(NULL, 0, "%llu", _ullong);
-    char* str = (char*)malloc(len + 1);
-    snprintf(str, len + 1, "%llu", _ullong);
-    return csc_append_kvstr_csc_config(_csc_config, key_name, str);
-}
-
-static bool csc_append_uint_csc_config(csc_config* _csc_config, const char* key_name, unsigned int _uint)
-{
-    int len = snprintf(NULL, 0, "%u", _uint);
-    char* str = (char*)malloc(len + 1);
-    snprintf(str, len + 1, "%u", _uint);
-    return csc_append_kvstr_csc_config(_csc_config, key_name, str);
-}
-
-static bool csc_append_float_csc_config(csc_config* _csc_config, const char* key_name, float _float)
-{
-    int len = snprintf(NULL, 0, "%f", _float);
-    char* str = (char*)malloc(len + 1);
-    snprintf(str, len + 1, "%f", _float);
-    return csc_append_kvstr_csc_config(_csc_config, key_name, str);
-}
-
-static bool csc_append_double_csc_config(csc_config* _csc_config, const char* key_name, double _double)
-{
-    int len = snprintf(NULL, 0, "%lf", _double);
-    char* str = (char*)malloc(len + 1);
-    snprintf(str, len + 1, "%lf", _double);
-    return csc_append_kvstr_csc_config(_csc_config, key_name, str);
-}
-
-static bool csc_append_long_double_csc_config(csc_config* _csc_config, const char* key_name, long double ldouble)
-{
-    int len = snprintf(NULL, 0, "%Lf", ldouble);
-    char* str = (char*)malloc(len + 1);
-    snprintf(str, len + 1, "%Lf", ldouble);
-    return csc_append_kvstr_csc_config(_csc_config, key_name, str);
-}
-
-static bool csc_append_bool_csc_config(csc_config* _csc_config, const char* key_name, bool _bool)
-{
-    return csc_append_uint_csc_config(_csc_config, key_name, (unsigned int)_bool);
-}
-
-/* -------------------- OTHERS CONFIG RELATED FUNCTIONS -------------------- */
-
-static void csc_concat_csc_configs(csc_config* _csc_config0, csc_config* _csc_config1)
-{
-    CSC_ASSERT_W_ERR_LOG(_csc_config0 != NULL, "_csc_config0 is a null pointer")
-    CSC_ASSERT_W_ERR_LOG(_csc_config1 != NULL, "_csc_config1 is a null pointer")
-
-    for (size_t index = 0; index < _csc_config1->size; index++)
-        _csc_append_csc_str_csc_config(_csc_config0, _csc_config1->config[index].key, _csc_config1->config[index].value);
-}
-
-static void _csc_write_config_fp(csc_config* _csc_config, FILE* out_file)
-{
-    CSC_ASSERT_W_ERR_LOG(_csc_config != NULL, "_csc_config is a null pointer")
-    CSC_ASSERT_W_ERR_LOG(out_file != NULL, "out_file is a null pointer")
-
-    fprintf(out_file, "\n# Generated by CSmolConf v%i.%i.%i\n", C_SMOL_CONF_MAJOR, C_SMOL_CONF_MINOR, C_SMOL_CONF_PATCH);
-    for (size_t index = 0; index < _csc_config->size; index++)
-        fprintf(out_file, "%s=%s;\n", _csc_config->config[index].key->str, _csc_config->config[index].value->str);
-}
-
-static bool csc_write_config(csc_config* _csc_config, const char* path)
-{
-    FILE* out_file;
-    CSC_FOPEN_W_ERR_CHK(out_file, path, "w+", , false)
-    _csc_write_config_fp(_csc_config, out_file);
-    fclose(out_file);
+    FILE* in_file = NULL;
+    if ((in_file = fopen(path, "r")) == NULL)
+        return false;
+    fclose(in_file);
     return true;
 }
 
-#undef CSC_LOG_ERR
-#undef CSC_ASSERT_W_ERR_LOG
-#undef CSC_FOPEN_W_ERR_CHK
+static SCNF_ERROR scnf_get_path(scnf_config* config, const char* key, const char** dest)
+{
+    const char* value = scnf_find(config, key);
+    if (value == NULL)
+        return SCNF_FAILED_NOT_FOUND;
+    if (!_scnf_file_exists(value))
+        return SCNF_FAILED_WRONG_TYPE;
+    (*dest) = value;
+    return SCNF_SUCCESS;
+}
+
+/* -------------------- WRITE -------------------- */
+
+static bool scnf_append_bool_scnf_config(scnf_config* config, const char* key, bool value)
+{
+    return scnf_append_uint_scnf_config(config, key, (unsigned int)value);
+}
+
+static bool scnf_append_int_scnf_config(scnf_config* config, const char* key, int value)
+{
+    int len = snprintf(NULL, 0, "%i", value);
+    char* value_str = (char*)malloc(len + 1);
+    snprintf(value_str, len + 1, "%i", value);
+    return scnf_config_append_kv(config, key, value_str);
+}
+
+static bool scnf_append_uint_scnf_config(scnf_config* config, const char* key, unsigned int value)
+{
+    int len = snprintf(NULL, 0, "%u", value);
+    char* value_str = (char*)malloc(len + 1);
+    snprintf(value_str, len + 1, "%u", value);
+    return scnf_config_append_kv(config, key, value_str);
+}
+
+static bool scnf_append_float_scnf_config(scnf_config* config, const char* key, float value)
+{
+    int len = snprintf(NULL, 0, "%f", value);
+    char* value_str = (char*)malloc(len + 1);
+    snprintf(value_str, len + 1, "%f", value);
+    return scnf_config_append_kv(config, key, value_str);
+}
+
+/* -------------------- OTHER-------------------- */
+
+static void scnf_concat_scnf_configs(scnf_config* dest_config, scnf_config* src_config)
+{
+    for (size_t index = 0; index < src_config->size; index++)
+        scnf_config_append_kv(dest_config, src_config->config[index].key, src_config->config[index].value);
+}
+
+static void _scnf_write_config(scnf_config* config, FILE* out_file)
+{
+    fprintf(out_file, "# Generated by CSmolConf v%i.%i.%i\n", SMOL_CONF_MAJOR, SMOL_CONF_MINOR, SMOL_CONF_PATCH);
+    for (size_t index = 0; index < config->size; index++)
+        fprintf(out_file, "%s=%s\n", config->config[index].key, config->config[index].value);
+}
+
+static bool scnf_write_config(scnf_config* config, const char* path)
+{
+    FILE* out_file;
+    if ((out_file = fopen(path, "w+")) == NULL)
+        return false;
+    _scnf_write_config(config, out_file);
+    fclose(out_file);
+    return true;
+}
 
 #ifdef __cplusplus
     }
 #endif
 
-#endif /* C_SMOL_CONF_H */
+#endif /* SMOL_CONF_H */
