@@ -1,10 +1,28 @@
+/**
+ * Small Configuration File Utility, licensed under the zlib license
+ * Copyright (C) 2022 JeFaisDesSpaghettis
+
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from
+ * the use of this software.
+ *
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not claim
+ *    that you wrote the original software. If you use this software in a product,
+ *    an acknowledgment in the product documentation would be appreciated but is
+ *    not required.
+ *
+ * 2. Altered source versions must be plainly marked as such, and must not be
+ *    misrepresented as being the original software.
+ *
+ * 3. This notice may not be removed or altered from any source distribution.
+*/
+
 #ifndef SMOL_CONF_H
 #define SMOL_CONF_H
-
-/**
- * Small Configuration File Utility
- * LICENSE - Public Domain (Unlicense), see UNLICENSE.md
-*/
 
 #ifdef __cplusplus
     extern "C" {
@@ -140,9 +158,13 @@ static SCNF_ERROR _scnf_read_config(scnf_config* config, const char* path)
 
         if (cur_line_end != NULL) *cur_line_end = '\0';
         else cur_line_end = cur_line_start + strlen(cur_line_start);
-        if (cur_line_end[-1] == '\n') cur_line_end[-1] = '\0';
+        if (cur_line_end[-1] == '\n')
+        {
+            cur_line_end[-1] = '\0';
+            cur_line_end--;
+        }
 
-        if ((cur_line_end - cur_line_start) == 0) continue;
+        if (cur_line_end == cur_line_start) continue;
 
         char* equal_ptr = strchr(cur_line_start, '=');
         if (equal_ptr == NULL)

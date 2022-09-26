@@ -1,4 +1,4 @@
-#include "c_smol_conf.h"
+#include "smol_conf.h"
 #include <stdio.h>
 
 int main()

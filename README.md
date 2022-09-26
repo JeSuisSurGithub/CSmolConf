@@ -1,4 +1,4 @@
-# C Smol Conf
+# Smol Conf
 Small header only parser with all functions ready for reading simple data and storing them. <br/>
 There is not structure just a key (matching with ctype.h isalnum()) and value (matching with ctype.h isprint())<br/>
 
@@ -28,7 +28,7 @@ other_config=in.scnf
 ```
 [test.c](/test.c)
 ```c
-#include "c_smol_conf.h"
+#include "smol_conf.h"
 #include <stdio.h>
 
 int main()
