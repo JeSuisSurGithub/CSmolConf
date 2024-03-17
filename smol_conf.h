@@ -30,7 +30,7 @@
 
 #define SMOL_CONF_MAJOR 2
 #define SMOL_CONF_MINOR 0
-#define SMOL_CONF_PATCH 0
+#define SMOL_CONF_PATCH 1
 
 #include <ctype.h>
 #include <float.h>
@@ -40,7 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const size_t SCNF_CACHE_SIZE = 256;
+static const size_t SCNF_HASH_SIZE = 256;
 
 #define SCNF_NO_CLAMP_INT_MIN INT32_MIN
 #define SCNF_NO_CLAMP_INT_MAX INT32_MAX
@@ -53,19 +53,19 @@ static const size_t SCNF_CACHE_SIZE = 256;
 
 /* -------------------- TYPEDEFS -------------------- */
 
-typedef struct _scnf_kvpair
+typedef struct scnf_kvpair
 {
     char* key;
     char* value;
 }scnf_kvpair;
 
-typedef struct _scnf_index_node
+typedef struct scnf_index_node
 {
     size_t index;
-    struct _scnf_index_node* next;
+    struct scnf_index_node* next;
 }scnf_index_node;
 
-typedef struct _scnf_config
+typedef struct scnf_config
 {
     scnf_kvpair* config;
     size_t capacity;
@@ -73,7 +73,7 @@ typedef struct _scnf_config
     scnf_index_node** hash_to_index;
 }scnf_config;
 
-typedef enum _SCNF_ERROR
+typedef enum SCNF_ERROR
 {
     SCNF_SUCCESS = 0,
     SCNF_FAILED_FOPEN = 1,
@@ -85,9 +85,9 @@ typedef enum _SCNF_ERROR
 /* -------------------- DEFINITIONS -------------------- */
 
 // SCNF Config
-static uint32_t _scnf_hash(const char* str);
+static uint32_t scnf_hash_(const char* str);
 static scnf_config* scnf_init_scnf_config(size_t len);
-static SCNF_ERROR _scnf_read_config(scnf_config* config, const char* path);
+static SCNF_ERROR scnf_read_config_(scnf_config* config, const char* path);
 static SCNF_ERROR scnf_read_config(scnf_config** pconfig, const char* path);
 static SCNF_ERROR scnf_append_config(scnf_config* config, const char* path);
 static void scnf_free_scnf_config(scnf_config* config);
@@ -99,7 +99,7 @@ static SCNF_ERROR scnf_get_bool(scnf_config* config, const char* key, bool* dest
 static SCNF_ERROR scnf_get_int(scnf_config* config, const char* key, int* dest, int min, int max);
 static SCNF_ERROR scnf_get_uint(scnf_config* config, const char* key, unsigned int* dest, unsigned int min, unsigned int max);
 static SCNF_ERROR scnf_get_float(scnf_config* config, const char* key, float* dest, float min, float max);
-static bool _scnf_file_exists(const char* path);
+static bool scnf_file_exists_(const char* path);
 static SCNF_ERROR scnf_get_path(scnf_config* config, const char* key, const char** dest);
 
 // Write
@@ -110,12 +110,12 @@ static bool scnf_append_float_scnf_config(scnf_config* config, const char* key, 
 
 // OTHER
 static void scnf_concat_scnf_configs(scnf_config* dest_config, scnf_config* src_config);
-static void _scnf_write_config(scnf_config* config, FILE* out_file);
+static void scnf_write_config_(scnf_config* config, FILE* out_file);
 static bool scnf_write_config(scnf_config* config, const char* path);
 
 /* -------------------- SCNF_CONFIG -------------------- */
 
-static uint32_t _scnf_hash(const char* str)
+static uint32_t scnf_hash_(const char* str)
 {
     // DJB2 Hash
     uint32_t hash = 5381;
@@ -131,11 +131,11 @@ static scnf_config* scnf_init_scnf_config(size_t len)
     config->config = (scnf_kvpair*)malloc(sizeof(scnf_kvpair) * len);
     config->capacity = len;
     config->size = 0;
-    config->hash_to_index = (scnf_index_node**)calloc(SCNF_CACHE_SIZE, sizeof(scnf_index_node*));
+    config->hash_to_index = (scnf_index_node**)calloc(SCNF_HASH_SIZE, sizeof(scnf_index_node*));
     return config;
 }
 
-static SCNF_ERROR _scnf_read_config(scnf_config* config, const char* path)
+static SCNF_ERROR scnf_read_config_(scnf_config* config, const char* path)
 {
     FILE* in_config = NULL;
     if ((in_config = fopen(path, "r")) == NULL)
@@ -236,17 +236,17 @@ static SCNF_ERROR _scnf_read_config(scnf_config* config, const char* path)
 static SCNF_ERROR scnf_read_config(scnf_config** pconfig, const char* path)
 {
     (*pconfig) = scnf_init_scnf_config(16);
-    return _scnf_read_config((*pconfig), path);
+    return scnf_read_config_((*pconfig), path);
 }
 
 static SCNF_ERROR scnf_append_config(scnf_config* config, const char* path)
 {
-    return _scnf_read_config(config, path);
+    return scnf_read_config_(config, path);
 }
 
 static void scnf_free_scnf_config(scnf_config* config)
 {
-    for (size_t index = 0; index < SCNF_CACHE_SIZE; index++)
+    for (size_t index = 0; index < SCNF_HASH_SIZE; index++)
     {
         scnf_index_node* index_node;
         while (config->hash_to_index[index] != NULL)
@@ -277,9 +277,9 @@ static bool scnf_config_append_kv(scnf_config* config, const char* key, const ch
     }
     config->config[config->size] = (scnf_kvpair){strdup(key), strdup(value)};
 
-    uint32_t hash = _scnf_hash(config->config[config->size].key);
+    uint32_t hash = scnf_hash_(config->config[config->size].key);
 
-    scnf_index_node** target_nodep = &config->hash_to_index[hash % SCNF_CACHE_SIZE];
+    scnf_index_node** target_nodep = &config->hash_to_index[hash % SCNF_HASH_SIZE];
     if ((*target_nodep) == NULL)
     {
         (*target_nodep) = (scnf_index_node*)malloc(sizeof(scnf_index_node));
@@ -301,8 +301,8 @@ static bool scnf_config_append_kv(scnf_config* config, const char* key, const ch
 
 static const char* scnf_find(scnf_config* config, const char* key)
 {
-    uint32_t hash = _scnf_hash(key);
-    scnf_index_node* target_node = config->hash_to_index[hash % SCNF_CACHE_SIZE];
+    uint32_t hash = scnf_hash_(key);
+    scnf_index_node* target_node = config->hash_to_index[hash % SCNF_HASH_SIZE];
     if (target_node == NULL)
     {
         return NULL;
@@ -424,7 +424,7 @@ static SCNF_ERROR scnf_get_float(
     return SCNF_SUCCESS;
 }
 
-static bool _scnf_file_exists(const char* path)
+static bool scnf_file_exists_(const char* path)
 {
     FILE* in_file = NULL;
     if ((in_file = fopen(path, "r")) == NULL)
@@ -438,7 +438,7 @@ static SCNF_ERROR scnf_get_path(scnf_config* config, const char* key, const char
     const char* value = scnf_find(config, key);
     if (value == NULL)
         return SCNF_FAILED_NOT_FOUND;
-    if (!_scnf_file_exists(value))
+    if (!scnf_file_exists_(value))
         return SCNF_FAILED_WRONG_TYPE;
     (*dest) = value;
     return SCNF_SUCCESS;
@@ -483,7 +483,7 @@ static void scnf_concat_scnf_configs(scnf_config* dest_config, scnf_config* src_
         scnf_config_append_kv(dest_config, src_config->config[index].key, src_config->config[index].value);
 }
 
-static void _scnf_write_config(scnf_config* config, FILE* out_file)
+static void scnf_write_config_(scnf_config* config, FILE* out_file)
 {
     fprintf(out_file, "# Generated by CSmolConf v%i.%i.%i\n", SMOL_CONF_MAJOR, SMOL_CONF_MINOR, SMOL_CONF_PATCH);
     for (size_t index = 0; index < config->size; index++)
@@ -495,7 +495,7 @@ static bool scnf_write_config(scnf_config* config, const char* path)
     FILE* out_file;
     if ((out_file = fopen(path, "w+")) == NULL)
         return false;
-    _scnf_write_config(config, out_file);
+    scnf_write_config_(config, out_file);
     fclose(out_file);
     return true;
 }
