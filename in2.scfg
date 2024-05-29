@@ -9,4 +9,4 @@
 integer=-25555
 unsigned=4294967295
 float=3.14
-other_config=in.scnf
+other_config=in.scfg

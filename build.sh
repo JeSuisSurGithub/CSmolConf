@@ -1,1 +1,1 @@
-gcc -o csc_test -Wall -O3 test.c
+gcc -o csc_test -Wall -Ofast -march=native -flto test.c

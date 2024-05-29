@@ -7,11 +7,11 @@ Comment ```# COMMENT ```<br/>
 Syntax: ```Key=Value```
 
 ## Example
-[in.scnf](/in.scnf)
+[in.scfg](/in.scfg)
 ```
 is_working=maybe i don't know
 ```
-[in2.scnf](/in2.scnf)
+[in2.scfg](/in2.scfg)
 ```
 # some comments
     # some comments
@@ -24,7 +24,7 @@ is_working=maybe i don't know
 integer=-25555
 unsigned=4294967295
 float=3.14
-other_config=in.scnf
+other_config=in.scfg
 ```
 [test.c](/test.c)
 ```c
@@ -33,37 +33,37 @@ other_config=in.scnf
 
 int main()
 {
-    scnf_config* config_in1;
-    scnf_read_config(&config_in1, "in.scnf");
-    printf("%s\n", scnf_find(config_in1, "is_working"));
+    scfg_config* config_in1;
+    scfg_read_config(&config_in1, "in.scfg");
+    printf("%s\n", scfg_find(config_in1, "is_working"));
 
-    scnf_config* config_in2 = scnf_init_scnf_config(16);
-    scnf_append_config(config_in2, "in2.scnf");
+    scfg_config* config_in2 = scfg_init_scfg_config(16);
+    scfg_append_config(config_in2, "in2.scfg");
     bool in_bool;
     int in_int;
     unsigned int in_uint;
     float in_float;
     const char* path;
-    scnf_get_bool(config_in2, "bool_true", &in_bool);
-    scnf_get_int(config_in2, "integer", &in_int, SCNF_NO_CLAMP_INT_MIN, SCNF_NO_CLAMP_INT_MAX);
-    scnf_get_uint(config_in2, "unsigned", &in_uint, SCNF_NO_CLAMP_UINT_MIN, SCNF_NO_CLAMP_UINT_MAX);
-    scnf_get_float(config_in2, "float", &in_float, SCNF_NO_CLAMP_FLT_MIN, SCNF_NO_CLAMP_FLT_MAX);
-    scnf_get_path(config_in2, "other_config", &path);
+    scfg_get_bool(config_in2, "bool_true", &in_bool);
+    scfg_get_int(config_in2, "integer", &in_int, scfg_NO_CLAMP_INT_MIN, scfg_NO_CLAMP_INT_MAX);
+    scfg_get_uint(config_in2, "unsigned", &in_uint, scfg_NO_CLAMP_UINT_MIN, scfg_NO_CLAMP_UINT_MAX);
+    scfg_get_float(config_in2, "float", &in_float, scfg_NO_CLAMP_FLT_MIN, scfg_NO_CLAMP_FLT_MAX);
+    scfg_get_path(config_in2, "other_config", &path);
     printf("%i %i %u %f %s\n", in_bool, in_int, in_uint, in_float, path);
 
-    scnf_config* config_out = scnf_init_scnf_config(16);
-    scnf_config_append_kv(config_out, "Testing", "eyyy");
+    scfg_config* config_out = scfg_init_scfg_config(16);
+    scfg_config_append_kv(config_out, "Testing", "eyyy");
 
-    scnf_append_bool_scnf_config(config_out, "outbool", 1);
-    scnf_append_int_scnf_config(config_out, "outint", -888888);
-    scnf_append_uint_scnf_config(config_out, "outuint", 4000000000);
-    scnf_append_float_scnf_config(config_out, "outfloat", 4.44);
-    scnf_concat_scnf_configs(config_out, config_in2);
-    scnf_concat_scnf_configs(config_out, config_in1);
-    scnf_write_config(config_out, "out.scnf");
+    scfg_append_bool_scfg_config(config_out, "outbool", 1);
+    scfg_append_int_scfg_config(config_out, "outint", -888888);
+    scfg_append_uint_scfg_config(config_out, "outuint", 4000000000);
+    scfg_append_float_scfg_config(config_out, "outfloat", 4.44);
+    scfg_concat_scfg_configs(config_out, config_in2);
+    scfg_concat_scfg_configs(config_out, config_in1);
+    scfg_write_config(config_out, "out.scfg");
 
-    scnf_free_scnf_config(config_in1);
-    scnf_free_scnf_config(config_in2);
-    scnf_free_scnf_config(config_out);
+    scfg_free_scfg_config(config_in1);
+    scfg_free_scfg_config(config_in2);
+    scfg_free_scfg_config(config_out);
 }
 ```
